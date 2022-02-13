@@ -1,35 +1,51 @@
-from random import random
+# coding=utf-8
 import simpy
 from eathquake_data import INITIAL_DATA
 from transport import PLANES
-from medial_help_onland import OPERATION_DURATION, MEDICAL_PERSONEL
+from medical_help_onland import OPERATION_DURATION
 
-def provide_aid_kit(env, people_number):
-  while people_number > 0:
-    people_helped = people_number - MEDICAL_PERSONEL
-    if (people_helped < 0):
-      people_helped = people_number
-    people_number -= people_helped
-    yield env.timeout(people_helped * OPERATION_DURATION['first_aid_kit'] * 1000)
+# in this project each minute is symbolically prepresented by 1 second
 
-def choose_hospital(env):
-  pass
+def deliver_field_operations(env):
+  print('Field Operations Delivered')
+  yield env.timeout(100) #will be filled with further data
 
+def take_ill(env, distance_oblast, distance_moscow):
+  yield env.timeout(100) #will be filled with further data
+
+""" Function defined how many brigades need to arrive """
+def count_brigade_amount(people_nmb, operation_times, working_time):
+  return people_nmb * operation_times / working_time
+
+
+""" Arrival time from the capital of Oblast, time in full MINUTES """
+def arrival_time(transport_data, distance):
+  return int(distance / transport_data['speed'] * 60)
+
+""" Main function initializing the whole earthquake and its forthcomings """
 def initialize_earthquake(env):
   print('Starting EarthQuake...')
   print('Earthquake done, МЧС informed')
-  people_severely_injured = INITIAL_DATA['eq_strength'] * INITIAL_DATA['coefficients']['severely_injured'] * random() / 100 * INITIAL_DATA['living_people']
-  print(f'Severely injured {people_severely_injured}')
-  while people_severely_injured > 0:
-    people_taken = people_severely_injured - PLANES['Ли-22']['seats']
-    provide_aid_kit(env, people_severely_injured)
-    if people_taken < 0:
-      people_taken = people_severely_injured
-    people_severely_injured -= people_taken
-    print(f'Remaining people {people_severely_injured}')
-    yield env.timeout(INITIAL_DATA['distance']/PLANES['Ли-22']['speed']*1000)
+
+  people_severely_injured = INITIAL_DATA['people'] * INITIAL_DATA['severely_injured']
+  people_dead = INITIAL_DATA['people'] * INITIAL_DATA['dead']
+  people_lightly_injured = INITIAL_DATA['people'] * INITIAL_DATA['lightly_injured']
+
+  print('Brigade coming to  tragedy place')
+  yield env.timeout(arrival_time(PLANES['Ли-22'], INITIAL_DATA['distance_oblast_capital']))
+
+  print('Sort people - 10 minutes')
+  yield env.timeout(10000)
+
+  print('Operations on the field')
+  yield env.process(deliver_field_operations(env))
+
+  print('Take the ill to the nearest big city')
+  yield env.process(take_ill(env, INITIAL_DATA['distance_oblast_capital'], INITIAL_DATA['distance_moscow']))
+
+  print('The operation can be successfully closed!')
 
 
 env = simpy.Environment()
 env.process(initialize_earthquake(env))
-env.run(until=15)
+env.run()

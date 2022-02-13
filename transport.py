@@ -67,17 +67,17 @@ PLANES = {
     'seats': 91,
     'stretchers': 60 
   },
-  'Ан-74': {},
-  'Ан-148-ЮОА': {},
-  'Pilatus-12': {},
-  'Cessna Citation XLS (Cessna 560XL)': {},
-  'Бе-200ЧС': {},
+#  'Ан-74': {},
+#  'Ан-148-ЮОА': {},
+#  'Pilatus-12': {},
+#  'Cessna Citation XLS (Cessna 560XL)': {},
+#  'Бе-200ЧС': {},
 
-  'Ан-38': {},
-  'Cessna 206 Stationar': {},
-  'Cessna 208В Grand Caravan': {},
-  'Ту-134': {},
+#  'Ан-38': {},
+#  'Cessna 206 Stationar': {},
+#  'Cessna 208В Grand Caravan': {},
+#  'Ту-134': {},
 
-  'Аи-2': {},
-  'Ан-2МС': {}
+#  'Аи-2': {},
+#  'Ан-2МС': {}
 }
