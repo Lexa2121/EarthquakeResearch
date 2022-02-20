@@ -1,3 +1,12 @@
+AMBULANCES = {
+  "Default": {
+    'range': 10000,
+    'speed': 100,
+    'seats': 10,
+    'stretchers': 10 
+  }
+}
+
 PLANES = {
   'Ли-22': {
     'range': 10900,
