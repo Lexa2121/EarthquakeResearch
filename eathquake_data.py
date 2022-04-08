@@ -3,9 +3,12 @@ INITIAL_DATA = {
   'distance_oblast_capital': 800
 }
 
-CITY_DATA = [
-  { 'name': 'Комсомольск-на-Амуре', 'severely_injured': 4005, 'injured': 3339, 'lightly_injured': 5556,  'distance_from_camp': 0 },
-  { 'name': 'Снежный', 'severely_injured': 392, 'injured': 329, 'lightly_injured': 544,  'distance_from_camp': 110 },
-  { 'name': 'Уктур', 'severely_injured': 310, 'injured': 260, 'lightly_injured': 430,  'distance_from_camp': 160 },
-  { 'name': 'Высокогорный', 'severely_injured': 620, 'injured': 520, 'lightly_injured': 860,  'distance_from_camp': 230 },
-]
+CITY_DATA = {'Комсомольск-на-Амуре': {'injured': 12290, 'distance_from_camp': 10, 'population': 241072},
+             'Снежный': {'injured': 1265, 'distance_from_camp': 110, 'population': 2000},
+             'Уктур': {'injured': 1000, 'distance_from_camp': 160, 'population': 1500},
+             'Высокогорный': {'injured': 2000, 'distance_from_camp': 230, 'population': 2726},
+             'Кенада': {'injured': 500, 'distance_from_camp': 270, 'population': 750},
+             'Тумнин': {'injured': 580, 'distance_from_camp': 360, 'population': 1000},
+             'Ягодный': {'injured': 1135, 'distance_from_camp': 160, 'population': 1700},
+             'Циммермановка': {'injured': 785, 'distance_from_camp': 230, 'population': 1200},
+             'Софийск': {'injured': 530, 'distance_from_camp': 330, 'population': 1000}}
