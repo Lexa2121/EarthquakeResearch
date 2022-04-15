@@ -1,19 +1,24 @@
 class Ambulance:
-    def __init__(self, town, receiving_time, service_time, amb_num=1):
-        self.receiving_time = receiving_time
+    def __init__(self, name, town, path, capacity=2, speed=1, from_mc = True, time_to_load_patient = 1):
+        self.name = name
         self.town = town
-        self.service_time = service_time
-        self.processing_start_time = -1
-        self.amb_num = amb_num
+        self.unload_time = 0
+        self.time_to_load_patient = time_to_load_patient
+        self.time_in_road = 0
+        self.capacity = capacity
+        self.time_to_road = path//speed
+        self.time_in_road = path//speed - 1
+        self.patients_onboard = []
+        self.from_mc = from_mc
 
-    def __str__(self):
-        return f'''Бригада №{self.amb_num} из {self.town}:
-    время поступления в эвакоприемник: {self.receiving_time},
-    время начала обслуживания: {self.processing_start_time},
-    время обслуживания: {self.service_time}'''
+    def load(self, patients):
+        self.patients_onboard.extend(patients)
+        self.time_in_road = -len(patients) * self.time_to_load_patient
+        self.unload_time = len(patients)
+        self.from_mc = False
+
+    def ride(self, t):
+        self.time_in_road += t
 
     def __repr__(self):
-        return f'''Бригада №{self.amb_num} из {self.town}:
-    время поступления в эвакоприемник: {self.receiving_time},
-    время начала обслуживания: {self.processing_start_time},
-    время обслуживания: {self.service_time}'''
+        return self.name
