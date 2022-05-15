@@ -15,8 +15,10 @@ class MedTeam:
         self.will_be_free = cur_time + patient.cure_time
 
     def free_up(self):
+        patient = self.patient
         self.is_busy = False
         self.patient = None
+        return patient
 
     def __repr__(self):
         return self.name

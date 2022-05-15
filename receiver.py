@@ -13,6 +13,8 @@ class Receiver:
         self.is_busy = True
         self.will_be_free = cur_time + ambulance.unload_time
         patients = self.ambulance.patients_onboard
+        for i, pat in enumerate(patients):
+            pat.queue_in_mc_start_time = cur_time
         self.ambulance.patients_onboard = []
         return patients
 

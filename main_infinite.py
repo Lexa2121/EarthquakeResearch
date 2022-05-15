@@ -21,7 +21,7 @@ illnesses = list(ILLNESS_DATA.keys())
 probas = [ILLNESS_DATA[i]['frac'] for i in illnesses]
 
 
-def model(num_recievers, amb_capacity, med_teams, ambs_per_1000, ill_probas=None):
+def model(num_recievers, amb_capacity, med_teams, ambs_per_1000, ill_probas=None, max_steps=200_000):
     if ill_probas is None:
         ill_probas = [0.67, 0.1, 0.23]
     ambs = []
@@ -47,22 +47,9 @@ def model(num_recievers, amb_capacity, med_teams, ambs_per_1000, ill_probas=None
     mc = MedCenter(num_recievers, med_teams)
     for i in mc.med_teams:
         mt_queue_history[i] = []
-    all_ambs_free = False
-    all_teams_free = False
     while True:
-        if len(ambs) == 0 and not all_ambs_free:
-            t_amb_max = t
-            all_ambs_free = True
-        if all_ambs_free:
-            for k, v in mc.med_teams.items():
-                for team in v['teams']:
-                    if team.is_busy:
-                        break
-                else:
-                    all_teams_free = True
-                break
-            if all_teams_free:
-                break
+        if t == max_steps:
+            break
         for amb in ambs:
             if amb not in mc.queue + mc.serving_ambulances:  # скорая не в приемнике и не в очереди
                 if total_injuries[amb.town] == 0 and amb.from_mc:  # скорая едет из приемника и все жертвы вывезены
@@ -89,7 +76,6 @@ def model(num_recievers, amb_capacity, med_teams, ambs_per_1000, ill_probas=None
                                 patient.delivering_start_time = t
                                 patients.append(patient)
                             amb.load(patients)  # загружаем скорую
-                            total_injuries[amb.town] -= len(amb.patients_onboard)
                         else:  # ... в ЭП
                             amb.time_in_road = 0
                             # print(f"{amb} arrived to med center at {t}")
@@ -97,12 +83,11 @@ def model(num_recievers, amb_capacity, med_teams, ambs_per_1000, ill_probas=None
                                 pat.delivering_end_time = t
                             mc.queue.append(amb)
         freed_ambs = mc.check_receivers(t)
-        if not all_ambs_free:
-            queue_history.append(len(mc.queue))
+        queue_history.append(len(mc.queue))
         for i in mc.med_teams:
             mt_queue_history[i].append(len(mc.med_teams[i]['queue']))
         t += 1
-    return t_amb_max, queue_history, t, mt_queue_history, mc.patient_history
+    return queue_history, mt_queue_history, mc.patient_history
 
 
 # num_receivers_list = [2, 4, 6]
@@ -114,14 +99,14 @@ def model(num_recievers, amb_capacity, med_teams, ambs_per_1000, ill_probas=None
 #
 # ambs_per_1000 = [0.01, 0.02, 0.1]
 
-num_receivers_list = [2, 4]
-amb_capacity_list = [2, 3, 4]
+num_receivers_list = [4]
+amb_capacity_list = [3]
 
-trauma_mt_amount_list = [3, 4]
-thorac_mt_amount_list = [1, 2]
-neuro_mt_amount_list = [1, 2]
+trauma_mt_amount_list = [20, 25, 30, 35]
+thorac_mt_amount_list = [3, 4, 5]
+neuro_mt_amount_list = [3, 4]
 
-ambs_per_1000 = [0.01, 0.1]
+ambs_per_1000 = [0.01]
 
 sim_results = defaultdict(list)
 
@@ -158,58 +143,34 @@ for num_r, amb_cap, ap1000, tra, tha, nea in tqdm.tqdm(combinations):
     sim_results[(num_r, amb_cap, ap1000, tra, tha, nea)].append(pd.DataFrame(long_pats_dict))
 
 
-t_data = {}
-
-
 print('Averaging random results over independent runs ... ')
 for num_r, amb_cap, ap1000 in tqdm.tqdm(list(product(num_receivers_list, amb_capacity_list, ambs_per_1000))):
     same_runs = {}
     same_runs['травматологический'] = defaultdict(list)
     same_runs['торакоабдоминальный'] = defaultdict(list)
     same_runs['нейрохирургичекий'] = defaultdict(list)
-    t_data[(num_r, amb_cap, ap1000)] = []
 
     for tra, tha, nea in product(trauma_mt_amount_list, thorac_mt_amount_list, neuro_mt_amount_list):
         sr = sim_results[(num_r, amb_cap, ap1000, tra, tha, nea)]
         same_runs['травматологический'][tra].append(sr[-2]['травматологический'])
         same_runs['торакоабдоминальный'][tha].append(sr[-2]['торакоабдоминальный'])
         same_runs['нейрохирургичекий'][nea].append(sr[-2]['нейрохирургичекий'])
-        t_data[(num_r, amb_cap, ap1000)].append(sr[0])
 
     for tra, tha, nea in product(trauma_mt_amount_list, thorac_mt_amount_list, neuro_mt_amount_list):
         sim_results[(num_r, amb_cap,
                      ap1000, tra,
                      tha, nea)][-2]['травматологический'] = np.mean(pad_sequences(same_runs['травматологический'][tra],
-                                                                                  padding='post'),
-                                                                    axis=0)
+                                                                                  padding='post'), axis=0)
         sim_results[(num_r, amb_cap,
                      ap1000, tra,
                      tha, nea)][-2]['торакоабдоминальный'] = np.mean(pad_sequences(same_runs['торакоабдоминальный'][tha],
-                                                                                  padding='post'),
-                                                                    axis=0)
+                                                                                   padding='post'), axis=0)
         sim_results[(num_r, amb_cap,
                      ap1000, tra,
                      tha, nea)][-2]['нейрохирургичекий'] = np.mean(pad_sequences(same_runs['нейрохирургичекий'][nea],
-                                                                                  padding='post'),
-                                                                    axis=0)
-    t_data[(num_r, amb_cap, ap1000)] = int(np.mean(t_data[(num_r, amb_cap, ap1000)]))
-
-data = defaultdict(list)
-for x, y, z in product(num_receivers_list, amb_capacity_list, ambs_per_1000):
-    data['num_receivers'].append(x)
-    data['amb_capacity'].append(y)
-    data['ambs_per_1000'].append(z)
-    data['t_overall'].append(t_data[(x, y, z)])
-
-
-pd_data = pd.DataFrame()
-for k in data:
-    pd_data[k] = data[k]
+                                                                                  padding='post'), axis=0)
 
 print('Modeling has been finished')
-
-# TODO: посмотреть распределение времени в дороге/в очереди в эвакоприемник/в очереди к врачу/у врача для каждого пациента (см. картинку в тг)
-# TODO: boxplot для времени в дороге/в очереди в эвакоприемник/в очереди к врачу/у врача для пациентов
 
 app = Dash(__name__)
 
@@ -218,7 +179,6 @@ app.layout = html.Div([
     dcc.Graph(id="graph"),
     dcc.Graph(id="graph2"),
     dcc.Graph(id="graph3"),
-    dcc.Graph(id="graph4"),
     html.P("Количество мест в приемнике для машин:"),
     dcc.Slider(id="nr",
                value=num_receivers_list[0],
@@ -255,7 +215,6 @@ app.layout = html.Div([
     Output("graph", "figure"),
     Output("graph2", "figure"),
     Output("graph3", "figure"),
-    Output("graph4", "figure"),
     Input("nr", "value"),
     Input("ap1000", "value"),
     Input("ac", "value"),
@@ -263,7 +222,7 @@ app.layout = html.Div([
     Input("tha", "value"),
     Input("nea", "value"))
 def display_color(nr, ap1000, ac, tra, tha, nea):
-    amb_t_data, data, _, medt_data, pats_data = sim_results[(nr, ac, ap1000, tra, tha, nea)]
+    data, medt_data, pats_data = sim_results[(nr, ac, ap1000, tra, tha, nea)]
     data = np.array(data)
     data = data[data != 0]
     counts, bins = np.histogram(data, bins=range(0, 30, 1))
@@ -308,7 +267,6 @@ def display_color(nr, ap1000, ac, tra, tha, nea):
     fig.update_yaxes(title_text="Количество событий", row=1, col=1)
     fig.update_yaxes(title_text="Размер очереди", row=2, col=2)
 
-    amb_t_data = pd_data[pd_data['ambs_per_1000']==ap1000].pivot('num_receivers', 'amb_capacity', 't_overall')#.values
     # fig2 = go.Figure()
     # fig2.add_trace(go.Heatmap(z=amb_t_data))
 
@@ -316,7 +274,7 @@ def display_color(nr, ap1000, ac, tra, tha, nea):
                          specs=[[{"type": "box"}, {"type": "box"}, {"type": "box"}, {"type": "box"}]],
                          column_titles=('delivery', 'time_in_amb_queue', 'time_in_mc_queue', 'surgery'))
     fig2.add_trace(
-        go.Box(y=pats_data[pats_data["waiting_type"]=='delivery']["waiting_time"]),
+        go.Box(y=pats_data[pats_data["waiting_type"] == 'delivery']["waiting_time"]),
         row=1, col=1
     )
     fig2.add_trace(
@@ -331,9 +289,8 @@ def display_color(nr, ap1000, ac, tra, tha, nea):
         go.Box(y=pats_data[pats_data["waiting_type"] == 'surgery']["waiting_time"]),
         row=1, col=4
     )
-    fig3 = px.imshow(amb_t_data, title="All ambulances freed time")
-    fig4 = px.bar(pats_data, x="name", y="waiting_time", color="waiting_type", title="Waiting times per patient")
-    return fig, fig2, fig3, fig4
+    fig3 = px.bar(pats_data, x="name", y="waiting_time", color="waiting_type", title="Waiting times per patient")
+    return fig, fig2, fig3
 
 
-app.run_server(debug=True)
+app.run_server(debug=False)
