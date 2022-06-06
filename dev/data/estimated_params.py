@@ -1,3 +1,5 @@
+
+# (num_recievers, amb_capacity, ambs_per_1000)
 mean_flow_intensities = {(2, 2, 0.02): 0.47544,
                          (2, 2, 0.1): 1.99988,
                          (2, 3, 0.02): 0.664395,

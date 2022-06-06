@@ -1,16 +1,13 @@
-from ambulance import Ambulance
-from med_center import MedCenter
-from patient import Patient
+from dev.base.ambulance import Ambulance
+from dev.base.med_center import MedCenter
+from dev.base.patient import Patient
 
-from eathquake_data import *
+from dev.data.eathquake_data import *
 
 from itertools import product
 import tqdm
 
 import numpy as np
-from statsmodels.tsa.stattools import adfuller
-import matplotlib.pyplot as plt
-
 
 illnesses = list(ILLNESS_DATA.keys())
 probas = [ILLNESS_DATA[i]['frac'] for i in illnesses]
