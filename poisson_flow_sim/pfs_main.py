@@ -8,13 +8,14 @@ from dash import Dash, dcc, html, Input, Output
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-parameters_setup = {'random_states': list(range(60)),
-                    'simulation_args': {'flow_intensities': list(np.round(np.arange(100, 350, 50) / (24 * 6), 5)),
-                                        'teams_amounts': list(range(1, 11))}}
+parameters_setup = {'random_states': list(range(30)),
+                    'simulation_args': {'flow_intensities': list(np.round(np.arange(100, 300, 50) / (24 * 4), 5)),
+                                        'teams_amounts': list(range(1, 8))}}
 
-sim = SimpleSimulation(time_horizon=100_000,
+sim = SimpleSimulation(time_horizon=10_000,
                        flow_intensities=parameters_setup['simulation_args']['flow_intensities'],
                        teams_amounts=parameters_setup['simulation_args']['teams_amounts'],
+                       evac_center_type='state_specific',
                        verbosity=1)
 
 if __name__ == '__main__':
@@ -25,7 +26,7 @@ if __name__ == '__main__':
 
     for k, v in sim_report.items():
 
-        mss = MultiServerSystem(k[1], k[0], 3)
+        mss = MultiServerSystem(k[1], k[0], 2)
         if k[0] not in intensities_data:
             intensities_data[k[0]] = defaultdict(list)
             intensities_data[k[0]]['minimum_teams'] = mss.rho
@@ -33,11 +34,9 @@ if __name__ == '__main__':
         intensities_data[k[0]]['lower_idle_bounds'].append(v['idle_time'][0])
         intensities_data[k[0]]['mean_idle'].append(v['idle_time'][1])
         intensities_data[k[0]]['upper_idle_bounds'].append(v['idle_time'][2])
-        # intensities_data[k[0]]['idle_3sigma'].append(v['idle_time'][1])
 
         intensities_data[k[0]]['lower_queue_bounds'].append(v['queue_time'][0])
         intensities_data[k[0]]['mean_queue'].append(v['queue_time'][1])
-        # intensities_data[k[0]]['queue_3sigma'].append(v['queue_time'][1])
         intensities_data[k[0]]['upper_queue_bounds'].append(v['queue_time'][2])
 
         intensities_data[k[0]]['uncured_rate'].append(v['uncured_rate'])
@@ -55,6 +54,18 @@ if __name__ == '__main__':
         intensities_data[k[0]]['theoretical_av_queue_size'].append(mss.average_queue_size)
         intensities_data[k[0]]['theoretical_al_1_team_free'].append(1 - mss.get_state_proba(k[1]))
 
+        intensities_data[k[0]]['lower_light_queue_bounds'].append(v['light'][0])
+        intensities_data[k[0]]['mean_light_queue'].append(v['light'][1])
+        intensities_data[k[0]]['upper_light_queue_bounds'].append(v['light'][2])
+
+        intensities_data[k[0]]['lower_moderate_queue_bounds'].append(v['moderate'][0])
+        intensities_data[k[0]]['mean_moderate_queue'].append(v['moderate'][1])
+        intensities_data[k[0]]['upper_moderate_queue_bounds'].append(v['moderate'][2])
+
+        intensities_data[k[0]]['lower_grave_queue_bounds'].append(v['grave'][0])
+        intensities_data[k[0]]['mean_grave_queue'].append(v['grave'][1])
+        intensities_data[k[0]]['upper_grave_queue_bounds'].append(v['grave'][2])
+
     app = Dash(__name__)
 
     app.layout = html.Div([
@@ -65,6 +76,8 @@ if __name__ == '__main__':
         dcc.Graph(id="graph2"),
         # html.P("Доля пациентов, над которыми не успели провести манипуляции vs Количество бригад"),
         # dcc.Graph(id="graph3"),
+        html.P("Время в очереди для пациентов с различной степенью тяжести повреждений"),
+        dcc.Graph(id="graph3"),
         html.P("Интенсивность входного потока (чел/сутки):"),
         dcc.Slider(id="fi",
                    value=parameters_setup['simulation_args']['flow_intensities'][0],
@@ -79,7 +92,7 @@ if __name__ == '__main__':
     @app.callback(
         Output("graph", "figure"),
         Output("graph2", "figure"),
-        # Output("graph3", "figure"),
+        Output("graph3", "figure"),
         Input("fi", "value"))
     def display_color(fi):
 
@@ -187,12 +200,56 @@ if __name__ == '__main__':
             height=800
         )
 
-        # fig3 = go.Figure()
-        # fig3.add_trace(go.Bar(name='Доля пациентов, над которыми не успели провести манипуляции',
-        #                       x=intensities_data[fi]['num_teams'],
-        #                       y=intensities_data[fi]['uncured_rate']))
+        fig3 = go.Figure()
+        fig3.add_trace(go.Bar(name='Доля пациентов, над которыми не успели провести манипуляции',
+                              x=intensities_data[fi]['num_teams'],
+                              y=intensities_data[fi]['uncured_rate']))
 
-        return fig, fig2  # , fig3
+        fig3 = go.Figure()
+        fig3.add_trace(go.Bar(
+            x=intensities_data[fi]['num_teams'],
+            y=intensities_data[fi]['mean_light_queue'],
+            name='Light',
+            error_y=dict(
+                array=np.array(intensities_data[fi]['upper_light_queue_bounds']),
+                arrayminus=np.array(intensities_data[fi]['lower_light_queue_bounds']),
+                type='data',
+                color='black',
+                thickness=1,
+                width=2,
+            )
+        ))
+        fig3.add_trace(go.Bar(
+            x=intensities_data[fi]['num_teams'],
+            y=intensities_data[fi]['mean_moderate_queue'],
+            name='Moderate',
+            error_y=dict(
+                array=np.array(intensities_data[fi]['upper_moderate_queue_bounds']),
+                arrayminus=np.array(intensities_data[fi]['lower_moderate_queue_bounds']),
+                type='data',
+                color='black',
+                thickness=1,
+                width=2,
+            )
+        ))
+        fig3.add_trace(go.Bar(
+            x=intensities_data[fi]['num_teams'],
+            y=intensities_data[fi]['mean_grave_queue'],
+            name='Grave',
+            error_y=dict(
+                array=np.array(intensities_data[fi]['upper_grave_queue_bounds']),
+                arrayminus=np.array(intensities_data[fi]['lower_grave_queue_bounds']),
+                type='data',
+                color='black',
+                thickness=1,
+                width=2,
+            )
+        ))
+
+        # Here we modify the tickangle of the xaxis, resulting in rotated labels.
+        fig3.update_layout(barmode='group')
+
+        return fig, fig2, fig3
 
 
     app.run_server(debug=False)
