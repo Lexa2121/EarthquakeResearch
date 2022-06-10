@@ -56,3 +56,10 @@ class CommonPatient(Patient):
 
     def __ge__(self, other):
         return self.states_priority.index(self.state) >= self.states_priority.index(other.state)
+
+
+class InjurySpecificPatient(CommonPatient):
+
+    def __init__(self, mc_arrival_time: int, name: str, injury_type: str, cure_time: int = 2, state='light'):
+        super(InjurySpecificPatient, self).__init__(mc_arrival_time, name, cure_time, state)
+        self.injury_type = injury_type

@@ -12,7 +12,14 @@ parameters_setup = {'random_states': list(range(30)),
                     'simulation_args': {'flow_intensities': list(np.round(np.arange(100, 300, 50) / (24 * 4), 5)),
                                         'teams_amounts': list(range(1, 8))}}
 
-sim = SimpleSimulation(time_horizon=10_000,
+state_specific = True
+injury_specific = True
+
+if state_specific:
+    if injury_specific:
+        ec_type = ''
+
+sim = SimpleSimulation(time_horizon=10000,
                        flow_intensities=parameters_setup['simulation_args']['flow_intensities'],
                        teams_amounts=parameters_setup['simulation_args']['teams_amounts'],
                        evac_center_type='state_specific',
