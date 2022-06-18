@@ -59,12 +59,16 @@ class StateSpecificEvacuationCenter(SimpleEvacuationCenter):
 class InjurySpecificEvacuationCenter:
 
     def __init__(self, num_teams: Dict):
+        self.teams = []
         self.free_teams = {}
         for injury, teams_amount in num_teams.items():
-            self.free_teams[injury] = [MedTeam(f"{injury} Team #{i}".title()) for i in range(1, teams_amount+1)]
+            mts = [MedTeam(f"{injury} Team #{i}".title()) for i in range(1, teams_amount+1)]
+            self.free_teams[injury] = mts
+            self.teams.extend(mts)
         self.busy_teams = {injury: [] for injury in num_teams}
         self.queue = {injury: [] for injury in num_teams}
         self.patient_history = {injury: [] for injury in num_teams}
+        self.all_patient_history = []
         self.cured_patient_history = {injury: [] for injury in num_teams}
         self.free_teams_history = {injury: [] for injury in num_teams}
         self.queue_history = {injury: [] for injury in num_teams}
@@ -93,6 +97,7 @@ class InjurySpecificEvacuationCenter:
                 else:
                     patient_to_op = self.queue[injury].pop(0)
                     self.patient_history[injury].append(patient_to_op)
+                    self.all_patient_history.append(patient_to_op)
                     team.occupy(cur_time, patient_to_op)
                     self.busy_teams[injury].append(team)
             self.free_teams[injury] = list(filter(lambda team_: not team_.is_busy, self.free_teams[injury]))
