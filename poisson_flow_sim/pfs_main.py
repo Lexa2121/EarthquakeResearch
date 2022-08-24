@@ -9,9 +9,10 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 parameters_setup = {'random_states': list(range(3)),
-                    'simulation_args': {'flow_intensities': list(np.round(np.arange(150, 250, 50) / (24 * 6), 5)),
+                    'simulation_args': {'flow_intensities': list(np.round(np.arange(150, 250, 50) / (24 * 30), 5)),
                                         'teams_amounts': list(range(8, 11)),
-                                        'quake_intensities': list(range(11, 13))}}
+                                        'quake_intensities': list(range(11, 13)),
+                                        'special_teams_cure_time': [15, 14, 13, 12, 11, 10]}}
 
 state_specific = True
 injury_specific = True
